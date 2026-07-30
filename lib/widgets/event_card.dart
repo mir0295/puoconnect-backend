@@ -1,0 +1,140 @@
+import 'package:flutter/material.dart';
+import '/screens/event_detail_screen.dart';
+
+class EventCard extends StatelessWidget {
+  final Map<String, dynamic> eventData;
+  final Map<String, Color> deptColors;
+  final bool isAdmin; 
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  const EventCard({
+    super.key, 
+    required this.eventData, 
+    required this.deptColors,
+    this.isAdmin = false, 
+    this.onEdit,
+    this.onDelete,
+  });
+
+  // Fungsi pembantu untuk membina barisan info dengan ikon
+  Widget _infoRow(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: Colors.grey.shade600),
+        const SizedBox(width: 4),
+        Text(text, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+      ],
+    );
+  }
+
+  Widget _buildStatusLabel() {
+    try {
+      List<String> parts = (eventData['startDate'] ?? "").split('/');
+      DateTime startDate = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+      DateTime now = DateTime.now();
+      DateTime today = DateTime(now.year, now.month, now.day);
+
+      if (today.isBefore(startDate)) {
+        return _statusChip("Akan Datang", Colors.blue);
+      } else {
+        return _statusChip("Sedang Berlangsung", Colors.green);
+      }
+    } catch (e) {
+      return const SizedBox.shrink();
+    }
+  }
+
+  Widget _statusChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
+      child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: InkWell(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailScreen(eventData: eventData))),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+              child: Container(
+                height: 140,
+                width: double.infinity,
+                color: Colors.grey.shade200,
+                // Penambahbaikan: Tambah errorBuilder untuk elakkan ralat imej[cite: 3, 4]
+                child: (eventData['imageUrl'] != null && eventData['imageUrl'].isNotEmpty)
+                    ? Image.network(
+                        eventData['imageUrl'], 
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey));
+                        },
+                      )
+                    : const Icon(Icons.image, size: 50, color: Colors.grey),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStatusLabel(),
+                        const SizedBox(height: 8),
+                        Text(eventData['title'] ?? 'Tiada Nama', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 4,
+                          children: [
+                            _infoRow(Icons.calendar_today, "${eventData['startDate']}"),
+                            _infoRow(Icons.access_time, "${eventData['startTime'] ?? '-'} - ${eventData['endTime'] ?? '-'}"),
+                            _infoRow(Icons.location_on, "${eventData['location'] ?? 'Tiada Lokasi'}"),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: deptColors[eventData['publishDept']] ?? Colors.grey, 
+                            borderRadius: BorderRadius.circular(4)
+                          ),
+                          child: Text(eventData['publishDept'] ?? 'Tiada Dept', 
+                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isAdmin && (onEdit != null || onDelete != null))
+                    PopupMenuButton(
+                      onSelected: (value) {
+                        if (value == 'edit') onEdit!();
+                        if (value == 'delete') onDelete!();
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(value: 'edit', child: ListTile(leading: Icon(Icons.edit), title: Text("Edit"))),
+                        const PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete, color: Colors.red), title: Text("Padam", style: TextStyle(color: Colors.red)))),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
