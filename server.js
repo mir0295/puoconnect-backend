@@ -57,6 +57,10 @@ app.get('/refresh-token', async (req, res) => {
 // ==========================================
 // TAMBAHAN FUNGSI BARU DI SINI (Contoh)
 // ==========================================
+app.get('/', (req, res) => {
+  res.send('PuoConnect Backend is running successfully! 🚀');
+});
+
 app.get('/status', (req, res) => {
   res.status(200).json({ 
     status: 'Online', 
