@@ -4,7 +4,7 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const axios = require('axios');
 
 // Panggil fail kunci Firebase yang anda masukkan tadi
-const serviceAccount = require('./serviceAccountKey.json');
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 initializeApp({
   credential: cert(serviceAccount)
