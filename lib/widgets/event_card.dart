@@ -29,7 +29,7 @@ class EventCard extends StatelessWidget {
           style: const TextStyle(
             fontSize: 12, 
             fontWeight: FontWeight.w600, 
-            color: Colors.black87, // 🌟 Diubah jadi lebih gelap/jelas
+            color: Colors.black87, 
           ),
         ),
       ],
@@ -63,16 +63,21 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String dept = eventData['publishDept'] ?? eventData['department'] ?? 'UMUM';
+    // Ambil data jabatan asal
+    String rawDept = eventData['publishDept'] ?? eventData['department'] ?? 'UMUM';
+    
+    // Tukar facebook_config kepada UKK secara automatik
+    String dept = (rawDept == 'facebook_config') ? 'UKK' : rawDept;
+    
     Color deptColor = deptColors[dept] ?? Colors.indigo;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       elevation: 3,
-      color: Colors.white, // 🌟 Latar belakang kad putih terang penuh (elak warna kelabu pucat)
+      color: Colors.white, 
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: Colors.grey.shade300, width: 1), // Garis sempadan kemas
+        side: BorderSide(color: Colors.grey.shade300, width: 1), 
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(15),
@@ -107,7 +112,6 @@ class EventCard extends StatelessWidget {
                       children: [
                         _buildStatusLabel(),
                         const SizedBox(height: 8),
-                        // Tajuk Event (Jelas & Hitam Pekat)
                         Text(
                           eventData['title'] ?? 'Tiada Nama', 
                           style: const TextStyle(
@@ -127,7 +131,6 @@ class EventCard extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        // Label Jabatan yang lebih terang dan jelas
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
