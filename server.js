@@ -2,14 +2,10 @@ const express = require('express');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const axios = require('axios');
-const fs = require('fs'); // Tambah pustaka fs untuk baca fail
 
-// Baca fail serviceAccountKey.json dari Secret Files Render (/etc/secrets/) atau secara lokal
-const serviceAccountPath = process.env.NODE_ENV === 'production' 
-  ? '/etc/secrets/serviceAccountKey.json' 
-  : './serviceAccountKey.json';
-
-const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+// Bersihkan format \n supaya Firebase boleh baca dengan betul dari Environment Variable
+const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT.replace(/\\n/g, '\n');
+const serviceAccount = JSON.parse(serviceAccountKey);
 
 initializeApp({
   credential: cert(serviceAccount)
