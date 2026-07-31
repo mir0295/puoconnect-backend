@@ -126,12 +126,12 @@ class _EventManagementTabState extends State<EventManagementTab> {
     );
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
-    // Tapis aktiviti mengikut jabatan admin tersebut
+    // Tapis aktiviti mengikut jabatan admin tersebut menggunakan 'department'
     Query query = FirebaseFirestore.instance
         .collection('events')
-        .where('publishDept', isEqualTo: widget.department);
+        .where('department', isEqualTo: widget.department);
 
     return Scaffold(
       body: Column(
