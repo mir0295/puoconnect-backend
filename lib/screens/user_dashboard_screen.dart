@@ -108,7 +108,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ? eventDate.isAfter(today) 
           : eventDate.isAtSameMomentAs(today);
 
-          return (selectedDept == "Semua" || data['publishDept'] == selectedDept) &&
+          String eventDept = data['department'] ?? data['publishDept'] ?? '';
+          return (selectedDept == "Semua" || eventDept == selectedDept) &&
                  dateCondition &&
                  (data['title'] ?? "").toString().toLowerCase().contains(searchQuery.toLowerCase()) &&
                  (data['isActive'] == true); 
