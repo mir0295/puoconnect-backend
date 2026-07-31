@@ -84,7 +84,16 @@ class _AddEventPageState extends State<AddEventPage> {
 
     try {
       // 1. Dapatkan targetConfig secara automatik berdasarkan akaun admin yang sedang login
+  // 1. Dapatkan targetConfig secara automatik berdasarkan akaun admin yang sedang login
       String targetConfigId = await _getAdminTargetConfig();
+
+      // Tentukan pendekkan nama jabatan untuk paparan/query aplikasi (cth: 'JTMK' atau 'JMSK')
+      String shortDept = 'UKK';
+      if (targetConfigId == 'jabatan_teknologi_maklumat') {
+        shortDept = 'JTMK';
+      } else if (targetConfigId == 'jabatan_matematik_sains_komputer') {
+        shortDept = 'JMSK';
+      }
 
       final data = {
         'title': titleController.text,
@@ -95,7 +104,8 @@ class _AddEventPageState extends State<AddEventPage> {
         'startTime': startTime.value,
         'endTime': endTime.value,
         'location': selectedLoc,
-        'publishDept': targetConfigId, // Simpan ID sasaran dalam database
+        'publishDept': targetConfigId, // Untuk rujukan Facebook config (cth: jabatan_teknologi_maklumat)[cite: 3]
+        'department': shortDept,       // TAMBAH INI: Supaya paparan aplikasi (JTMK/JMSK) boleh tapis dengan betul!
         'isActive': true,
       };
 
