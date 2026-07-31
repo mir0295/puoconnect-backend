@@ -17,14 +17,21 @@ class EventCard extends StatelessWidget {
     this.onDelete,
   });
 
-  // Fungsi pembantu untuk membina barisan info dengan ikon
+  // Fungsi pembantu untuk membina barisan info dengan ikon (warna teks lebih terang)
   Widget _infoRow(IconData icon, String text) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: Colors.grey.shade600),
+        Icon(icon, size: 14, color: Colors.indigo.shade700),
         const SizedBox(width: 4),
-        Text(text, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+        Text(
+          text, 
+          style: const TextStyle(
+            fontSize: 12, 
+            fontWeight: FontWeight.w600, 
+            color: Colors.black87, // 🌟 Diubah jadi lebih gelap/jelas
+          ),
+        ),
       ],
     );
   }
@@ -56,11 +63,19 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String dept = eventData['publishDept'] ?? eventData['department'] ?? 'UMUM';
+    Color deptColor = deptColors[dept] ?? Colors.indigo;
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      color: Colors.white, // 🌟 Latar belakang kad putih terang penuh (elak warna kelabu pucat)
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: Colors.grey.shade300, width: 1), // Garis sempadan kemas
+      ),
       child: InkWell(
+        borderRadius: BorderRadius.circular(15),
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailScreen(eventData: eventData))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,9 +85,8 @@ class EventCard extends StatelessWidget {
               child: Container(
                 height: 140,
                 width: double.infinity,
-                color: Colors.grey.shade200,
-                // Penambahbaikan: Tambah errorBuilder untuk elakkan ralat imej[cite: 3, 4]
-                child: (eventData['imageUrl'] != null && eventData['imageUrl'].isNotEmpty)
+                color: Colors.grey.shade100,
+                child: (eventData['imageUrl'] != null && eventData['imageUrl'].toString().isNotEmpty)
                     ? Image.network(
                         eventData['imageUrl'], 
                         fit: BoxFit.cover,
@@ -80,11 +94,11 @@ class EventCard extends StatelessWidget {
                           return const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey));
                         },
                       )
-                    : const Icon(Icons.image, size: 50, color: Colors.grey),
+                    : Center(child: Icon(Icons.image_outlined, size: 45, color: Colors.grey.shade400)),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(14.0),
               child: Row(
                 children: [
                   Expanded(
@@ -93,26 +107,40 @@ class EventCard extends StatelessWidget {
                       children: [
                         _buildStatusLabel(),
                         const SizedBox(height: 8),
-                        Text(eventData['title'] ?? 'Tiada Nama', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        // Tajuk Event (Jelas & Hitam Pekat)
+                        Text(
+                          eventData['title'] ?? 'Tiada Nama', 
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold, 
+                            fontSize: 16, 
+                            color: Colors.black87,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         Wrap(
                           spacing: 12,
-                          runSpacing: 4,
+                          runSpacing: 6,
                           children: [
                             _infoRow(Icons.calendar_today, "${eventData['startDate']}"),
                             _infoRow(Icons.access_time, "${eventData['startTime'] ?? '-'} - ${eventData['endTime'] ?? '-'}"),
                             _infoRow(Icons.location_on, "${eventData['location'] ?? 'Tiada Lokasi'}"),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
+                        // Label Jabatan yang lebih terang dan jelas
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: deptColors[eventData['publishDept']] ?? Colors.grey, 
-                            borderRadius: BorderRadius.circular(4)
+                            color: deptColor.withValues(alpha: 0.15), 
+                            borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text(eventData['publishDept'] ?? 'Tiada Dept', 
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)
+                          child: Text(
+                            dept, 
+                            style: TextStyle(
+                              color: deptColor, 
+                              fontSize: 11, 
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
