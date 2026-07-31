@@ -3,34 +3,31 @@ const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const axios = require('axios');
 
-// Bersihkan format \n supaya Firebase boleh baca dengan betul dari Environment Variable
-const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT.replace(/\\n/g, '\n');
-const serviceAccount = JSON.parse(serviceAccountKey);
-
+// Inisialisasi Firebase menggunakan pembolehubah individu yang lebih selamat
 initializeApp({
-  credential: cert(serviceAccount)
+  credential: cert({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined
+  })
 });
 
 const db = getFirestore();
 const app = express();
 
-// Middleware untuk baca JSON jika perlu di masa akan datang
 app.use(express.json());
 
 app.get('/refresh-token', async (req, res) => {
   try {
-    // 1. Ambil token lama dari Firestore
     const docRef = db.collection('settings').doc('facebook_config');
     const doc = await docRef.get();
     if (!doc.exists) return res.status(404).send('Config not found');
     
     const currentToken = doc.data().access_token;
     
-    // Gantikan dengan App ID dan App Secret Facebook sebenar
     const appId = '1535877565003029';
     const appSecret = 'e6f43c9650f47e54a2dcd1271af2719b';
 
-    // 2. Minta token baharu dengan Facebook API
     const response = await axios.get('https://graph.facebook.com/v25.0/oauth/access_token', {
       params: {
         grant_type: 'fb_exchange_token',
@@ -42,7 +39,6 @@ app.get('/refresh-token', async (req, res) => {
 
     const newToken = response.data.access_token;
 
-    // 3. Simpan semula token baharu ke Firestore secara automatik
     await docRef.set({
       access_token: newToken,
       updated_at: FieldValue.serverTimestamp()
@@ -55,9 +51,6 @@ app.get('/refresh-token', async (req, res) => {
   }
 });
 
-// ==========================================
-// TAMBAHAN FUNGSI BARU DI SINI (Contoh)
-// ==========================================
 app.get('/', (req, res) => {
   res.send('PuoConnect Backend is running successfully! 🚀');
 });
