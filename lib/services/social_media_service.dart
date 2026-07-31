@@ -1,51 +1,55 @@
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SocialMediaService {
-  // Fungsi untuk ambil token terkini secara dinamik dari Firestore
-  static Future<String?> _getLatestAccessToken() async {
+  // Ambil token secara dinamik mengikut dokumen target yang dipilih
+  static Future<Map<String, dynamic>?> _getConfig(String targetConfig) async {
     try {
       final doc = await FirebaseFirestore.instance
           .collection('settings')
-          .doc('facebook_config')
+          .doc(targetConfig) // Baca ikut target (Main / Jabatan)
           .get();
           
       if (doc.exists && doc.data() != null) {
-        return doc.data()!['access_token'] as String?;
+        return doc.data();
       }
     } catch (e) {
-      debugPrint('Ralat ambil token dari Firestore: $e');
+      debugPrint('Ralat ambil config dari Firestore: $e');
     }
     return null;
   }
 
-  /// 1. Hantar post ke Facebook Page (Menggunakan token live dari Firestore)
+  /// Hantar post ke Facebook Page mengikut akaun sasaran
   static Future<bool> postToFacebook({
     required String message,
     String? mediaUrl,     
     bool isVideo = false, 
+    required String targetConfig, // Tambah parameter ini (cth: 'facebook_config')
   }) async {
     try {
-      // Ambil token terkini dari Firestore sebelum post
-      final String? accessToken = await _getLatestAccessToken();
+      final config = await _getConfig(targetConfig);
+      final String? accessToken = config?['access_token'];
+      final String? pageId = config?['page_id'] ?? 'me'; // Guna page_id jika ada
+
       if (accessToken == null || accessToken.isEmpty) {
-        debugPrint('FB Post Gagal: Access Token tidak dijumpai di Firestore.');
+        debugPrint('FB Post Gagal: Access Token tidak dijumpai untuk $targetConfig.');
         return false;
       }
 
-      String endpoint = 'https://graph.facebook.com/v25.0/me/feed';
+      // Jika ada page_id khusus, guna graph.facebook.com/v25.0/{page_id}/feed
+      String endpoint = 'https://graph.facebook.com/v25.0/$pageId/feed';
       Map<String, String> bodyData = {
         'access_token': accessToken,
       };
 
       if (mediaUrl != null && mediaUrl.isNotEmpty && mediaUrl != "https://via.placeholder.com/150") {
         if (isVideo) {
-          endpoint = 'https://graph.facebook.com/v25.0/me/videos';
+          endpoint = 'https://graph.facebook.com/v25.0/$pageId/videos';
           bodyData['file_url'] = mediaUrl;
           bodyData['description'] = message;
         } else {
-          endpoint = 'https://graph.facebook.com/v25.0/me/photos';
+          endpoint = 'https://graph.facebook.com/v25.0/$pageId/photos';
           bodyData['url'] = mediaUrl;
           bodyData['caption'] = message;
         }
@@ -59,7 +63,7 @@ class SocialMediaService {
       );
 
       if (response.statusCode == 200) {
-        debugPrint('FB Post Bergambar/Video Berjaya: ${response.body}');
+        debugPrint('FB Post Berjaya ke $targetConfig: ${response.body}');
         return true;
       } else {
         debugPrint('FB Post Gagal: ${response.body}');
@@ -69,20 +73,5 @@ class SocialMediaService {
       debugPrint('Error Facebook API: $e');
       return false;
     }
-  }
-
-  /// 2. Fungsi Multi-Posting (Penghantaran Serentak)
-  static Future<Map<String, bool>> publishToAll({
-    required String message,
-    String? mediaUrl,
-    bool isVideo = false,
-  }) async {
-    final results = await Future.wait([
-      postToFacebook(message: message, mediaUrl: mediaUrl, isVideo: isVideo),
-    ]);
-
-    return {
-      'facebook': results[0],
-    };
   }
 }

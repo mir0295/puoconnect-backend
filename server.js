@@ -1,67 +1,54 @@
-const express = require('express');
-const { initializeApp, cert } = require('firebase-admin/app');
-const { getFirestore, FieldValue } = require('firebase-admin/firestore');
-const axios = require('axios');
-
-// Inisialisasi Firebase menggunakan pembolehubah individu yang lebih selamat
-initializeApp({
-  credential: cert({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined
-  })
-});
-
-const db = getFirestore();
-const app = express();
-
-app.use(express.json());
-
 app.get('/refresh-token', async (req, res) => {
   try {
-    const docRef = db.collection('settings').doc('facebook_config');
-    const doc = await docRef.get();
-    if (!doc.exists) return res.status(404).send('Config not found');
+    // Jika parameter 'target' diberikan dalam URL, proses satu target sahaja.
+    // Jika tiada, senaraikan semua jabatan untuk dikemas kini serentak.
+    const targets = req.query.target 
+      ? [req.query.target] 
+      : ['facebook_config', 'jabatan_teknologi_maklumat', 'jabatan_matematik_sains_komputer'];
     
-    const currentToken = doc.data().access_token;
-    
+    let results = [];
     const appId = '1535877565003029';
     const appSecret = 'e6f43c9650f47e54a2dcd1271af2719b';
 
-    const response = await axios.get('https://graph.facebook.com/v25.0/oauth/access_token', {
-      params: {
-        grant_type: 'fb_exchange_token',
-        client_id: appId,
-        client_secret: appSecret,
-        fb_exchange_token: currentToken
+    for (const targetConfig of targets) {
+      const docRef = db.collection('settings').doc(targetConfig);
+      const doc = await docRef.get();
+      
+      if (!doc.exists) {
+        results.push(`Config ${targetConfig} not found`);
+        continue;
       }
-    });
+      
+      const currentToken = doc.data().access_token;
+      if (!currentToken) {
+        results.push(`Token for ${targetConfig} is missing`);
+        continue;
+      }
 
-    const newToken = response.data.access_token;
+      // Minta long-lived token (60 hari) daripada Meta
+      const response = await axios.get('https://graph.facebook.com/v25.0/oauth/access_token', {
+        params: {
+          grant_type: 'fb_exchange_token',
+          client_id: appId,
+          client_secret: appSecret,
+          fb_exchange_token: currentToken
+        }
+      });
 
-    await docRef.set({
-      access_token: newToken,
-      updated_at: FieldValue.serverTimestamp()
-    }, { merge: true });
+      const newToken = response.data.access_token;
 
-    res.status(200).send('Token Facebook berjaya diperbaharui!');
+      // Simpan semula token baru ke Firestore
+      await docRef.set({
+        access_token: newToken,
+        updated_at: FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      results.push(`Token Facebook bagi [${targetConfig}] berjaya diperbaharui!`);
+    }
+
+    res.status(200).send(results.join('\n'));
   } catch (error) {
-    console.error(error);
+    console.error(error.response?.data || error);
     res.status(500).send('Gagal refresh token');
   }
 });
-
-app.get('/', (req, res) => {
-  res.send('PuoConnect Backend is running successfully! 🚀');
-});
-
-app.get('/status', (req, res) => {
-  res.status(200).json({ 
-    status: 'Online', 
-    message: 'Server Puoconnect Backend sedang aktif!',
-    timestamp: new Date() 
-  });
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server berjalan di port ${PORT}`));

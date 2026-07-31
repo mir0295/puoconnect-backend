@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:typed_data';
@@ -29,7 +30,6 @@ class _AddEventPageState extends State<AddEventPage> {
   ValueNotifier<String> endTime = ValueNotifier('Pilih Masa Tamat');
 
   String selectedLoc = 'Dewan Kuliah A';
-  String selectedDept = 'Semua';
 
   @override
   void initState() {
@@ -44,8 +44,34 @@ class _AddEventPageState extends State<AddEventPage> {
       startTime.value = data['startTime'] ?? 'Pilih Masa Mula';
       endTime.value = data['endTime'] ?? 'Pilih Masa Tamat';
       selectedLoc = data['location'] ?? 'Dewan Kuliah A';
-      selectedDept = data['publishDept'] ?? 'Semua';
     }
+  }
+
+  // Fungsi untuk mendapatkan ID konfigurasi Facebook berdasarkan jabatan user yang login
+  Future<String> _getAdminTargetConfig() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (userDoc.exists && userDoc.data() != null) {
+          String dept = userDoc['department'] ?? '';
+          
+          // Petakan field department dari Firestore kepada nama dokumen settings
+          if (dept == 'JTMK') {
+            return 'jabatan_teknologi_maklumat';
+          } else if (dept == 'JMSK' || dept.contains('Matematik')) {
+            return 'jabatan_matematik_sains_komputer';
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Ralat ambil jabatan user: $e');
+    }
+    return 'facebook_config'; // Default ke akaun utama (UKK) jika tidak dijumpai
   }
 
   Future<void> _saveEvent() async {
@@ -56,20 +82,23 @@ class _AddEventPageState extends State<AddEventPage> {
 
     setState(() => _isLoading = true);
 
-    final data = {
-      'title': titleController.text,
-      'plc': plcController.text,
-      'imageUrl': imageController.text.isEmpty ? "https://via.placeholder.com/150" : imageController.text,
-      'startDate': startDate.value,
-      'endDate': endDate.value,
-      'startTime': startTime.value,
-      'endTime': endTime.value,
-      'location': selectedLoc,
-      'publishDept': selectedDept,
-      'isActive': true,
-    };
-
     try {
+      // 1. Dapatkan targetConfig secara automatik berdasarkan akaun admin yang sedang login
+      String targetConfigId = await _getAdminTargetConfig();
+
+      final data = {
+        'title': titleController.text,
+        'plc': plcController.text,
+        'imageUrl': imageController.text.isEmpty ? "https://via.placeholder.com/150" : imageController.text,
+        'startDate': startDate.value,
+        'endDate': endDate.value,
+        'startTime': startTime.value,
+        'endTime': endTime.value,
+        'location': selectedLoc,
+        'publishDept': targetConfigId, // Simpan ID sasaran dalam database
+        'isActive': true,
+      };
+
       if (widget.doc == null) {
         // A) Jika Tambah Aktiviti Baharu
         await FirebaseFirestore.instance.collection('events').add(data);
@@ -79,25 +108,25 @@ class _AddEventPageState extends State<AddEventPage> {
             "✨ Jom ramaikan dan sertai program menarik yang bakal diadakan di kampus kita!\n\n"
             "📌 Nama Aktiviti: ${titleController.text}\n"
             "🏢 Anjuran/PLC: ${plcController.text}\n"
-            "🏛️ Sasaran Jabatan: $selectedDept\n\n"
             "📅 Tarikh: ${startDate.value} hingga ${endDate.value}\n"
             "⏰ Masa: ${startTime.value} - ${endTime.value}\n"
             "📍 Lokasi: $selectedLoc\n\n"
             "---------------------------------------\n"
             "📲 Muat turun aplikasi PuoNotify sekarang untuk semak jadual dan maklumat lanjut aktiviti!\n"
-            "#PuoConnect #PuoNotify #CampusLife #JTMK #PolyCC";
+            "#PuoConnect #PuoNotify #CampusLife #PolyCC";
 
-        // 3. Post ke Facebook Page (Sokong Teks & Gambar Sekali)
+        // 3. Post ke Facebook secara automatik ke akaun jabatan masing-masing
         bool isFbSuccess = await SocialMediaService.postToFacebook(
           message: broadcastMessage,
-          mediaUrl: imageController.text, // Hantar link gambar dari Firebase Storage
+          mediaUrl: imageController.text, 
           isVideo: false,
+          targetConfig: targetConfigId, // Auto ikut jabatan user yang login!
         );
 
         if (!mounted) return;
         if (isFbSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Aktiviti berjaya disimpan & di-post ke Facebook!")),
+            const SnackBar(content: Text("Aktiviti berjaya disimpan & di-post ke Facebook Jabatan!")),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -212,13 +241,6 @@ class _AddEventPageState extends State<AddEventPage> {
                 decoration: const InputDecoration(labelText: "Lokasi", border: OutlineInputBorder()),
                 items: ["Dewan Kuliah A", "Dewan Kuliah B"].map((l) => DropdownMenuItem(value: l, child: Text(l))).toList(),
                 onChanged: (val) => setState(() => selectedLoc = val!),
-              ),
-              const SizedBox(height: 15),
-              DropdownButtonFormField<String>(
-                value: selectedDept,
-                decoration: const InputDecoration(labelText: "Jabatan", border: OutlineInputBorder()),
-                items: ["Semua", "JTMK", "JKE"].map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
-                onChanged: (val) => setState(() => selectedDept = val!),
               ),
             ]),
             
