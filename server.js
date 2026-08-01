@@ -1,11 +1,13 @@
 const express = require('express');
 const axios = require('axios');
-const { initializeApp } = require('firebase-admin/app');
+const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
-// Inisialisasi Firebase dengan menetapkan projectId secara manual
+// Inisialisasi Firebase menggunakan Environment Variable JSON
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
 initializeApp({
-  projectId: 'puoconnect'
+  credential: cert(serviceAccount)
 });
 
 const db = getFirestore();
