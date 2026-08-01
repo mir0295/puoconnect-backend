@@ -3,15 +3,14 @@ const axios = require('axios');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
-// Inisialisasi Firebase menggunakan Environment Variable JSON
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+// Inisialisasi menggunakan fail serviceAccountKey.json secara terus
+const serviceAccount = require('./serviceAccountKey.json');
 
 initializeApp({
   credential: cert(serviceAccount)
 });
 
 const db = getFirestore();
-
 const app = express();
 
 app.get('/refresh-token', async (req, res) => {
