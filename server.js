@@ -1,7 +1,10 @@
+const express = require('express');
+const axios = require('axios'); // Pastikan axios di-require jika guna
+const app = express(); // 🌟 WAJIB ADA DI ATAS SEKALI
+
+// Kod route anda di sini:
 app.get('/refresh-token', async (req, res) => {
   try {
-    // Jika parameter 'target' diberikan dalam URL, proses satu target sahaja.
-    // Jika tiada, senaraikan semua jabatan untuk dikemas kini serentak.
     const targets = req.query.target 
       ? [req.query.target] 
       : ['facebook_config', 'jabatan_teknologi_maklumat', 'jabatan_matematik_sains_komputer'];
@@ -25,7 +28,6 @@ app.get('/refresh-token', async (req, res) => {
         continue;
       }
 
-      // Minta long-lived token (60 hari) daripada Meta
       const response = await axios.get('https://graph.facebook.com/v25.0/oauth/access_token', {
         params: {
           grant_type: 'fb_exchange_token',
@@ -37,7 +39,6 @@ app.get('/refresh-token', async (req, res) => {
 
       const newToken = response.data.access_token;
 
-      // Simpan semula token baru ke Firestore
       await docRef.set({
         access_token: newToken,
         updated_at: FieldValue.serverTimestamp()
@@ -51,4 +52,10 @@ app.get('/refresh-token', async (req, res) => {
     console.error(error.response?.data || error);
     res.status(500).send('Gagal refresh token');
   }
+});
+
+// Jangan lupa untuk tetapkan port untuk server mendengar
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server berjalan di port ${PORT}`);
 });
