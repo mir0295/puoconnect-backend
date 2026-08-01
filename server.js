@@ -3,8 +3,10 @@ const axios = require('axios');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
-// Inisialisasi Firebase secara automatik
-initializeApp();
+// Inisialisasi Firebase dengan menetapkan projectId secara manual
+initializeApp({
+  projectId: 'puoconnect'
+});
 
 const db = getFirestore();
 
