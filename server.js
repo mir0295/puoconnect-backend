@@ -1,12 +1,12 @@
 const express = require('express');
 const axios = require('axios');
-const admin = require('firebase-admin');
+const { initializeApp } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
-// Inisialisasi Firebase secara automatik tanpa perlukan fail luar atau env key manual
-admin.initializeApp();
+// Inisialisasi Firebase secara automatik
+initializeApp();
 
-const db = admin.firestore();
-const FieldValue = admin.firestore.FieldValue;
+const db = getFirestore();
 
 const app = express();
 
