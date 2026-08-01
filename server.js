@@ -47,10 +47,16 @@ app.get('/refresh-token', async (req, res) => {
       results.push(`Token Facebook bagi [${targetConfig}] berjaya diperbaharui!`);
     }
 
-    res.status(200).send(results.join('\n'));
+    // 🌟 Diubah kepada format JSON ringkas untuk elak ralat "output too large"
+    res.status(200).json({ 
+      success: true, 
+      message: "Semua token berjaya diperbaharui!",
+      details: results 
+    });
+
   } catch (error) {
     console.error(error.response?.data || error);
-    res.status(500).send('Gagal refresh token');
+    res.status(500).json({ success: false, error: 'Gagal refresh token' });
   }
 });
 
