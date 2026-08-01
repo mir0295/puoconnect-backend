@@ -3,8 +3,8 @@ const axios = require('axios');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
-// Inisialisasi terus menggunakan objek JSON credentials
-const serviceAccount = {
+// Menggunakan JSON.parse untuk memastikan format private_key dibaca dengan betul oleh Firebase
+const serviceAccount = JSON.parse(JSON.stringify({
   "type": "service_account",
   "project_id": "puoconnect",
   "private_key_id": "e3f894d9de20d73a90d4e1a38ea67bb269a4a2d1",
@@ -16,7 +16,7 @@ const serviceAccount = {
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40puoconnect.iam.gserviceaccount.com",
   "universe_domain": "googleapis.com"
-};
+}));
 
 initializeApp({
   credential: cert(serviceAccount)
