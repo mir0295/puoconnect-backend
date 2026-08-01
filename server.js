@@ -55,10 +55,9 @@ app.get('/refresh-token', async (req, res) => {
       results.push(`Token Facebook bagi [${targetConfig}] berjaya diperbaharui!`);
     }
 
-    res.status(200).json({ 
+res.status(200).json({ 
       success: true, 
-      message: "Semua token berjaya diperbaharui!",
-      details: results 
+      message: "Token berjaya diperbaharui!" 
     });
 
   } catch (error) {
