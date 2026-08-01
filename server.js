@@ -2,14 +2,8 @@ const express = require('express');
 const axios = require('axios');
 const admin = require('firebase-admin');
 
-// Inisialisasi Firebase menggunakan Environment Variables dari Render tanpa semakan length
-admin.initializeApp({
-  credential: admin.credential.cert({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined
-  })
-});
+// Inisialisasi Firebase secara automatik tanpa perlukan fail luar atau env key manual
+admin.initializeApp();
 
 const db = admin.firestore();
 const FieldValue = admin.firestore.FieldValue;
