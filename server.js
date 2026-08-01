@@ -2,19 +2,16 @@ const express = require('express');
 const axios = require('axios');
 const admin = require('firebase-admin');
 
-// Inisialisasi Firebase menggunakan Application Default (selamat untuk Render)
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault()
-  });
-}
+// Inisialisasi terus tanpa menyemak apps.length
+admin.initializeApp({
+  credential: admin.credential.applicationDefault()
+});
 
 const db = admin.firestore();
 const FieldValue = admin.firestore.FieldValue;
 
-const app = express(); // 🌟 WAJIB ADA DI ATAS SEKALI
+const app = express();
 
-// Kod route anda di sini:
 app.get('/refresh-token', async (req, res) => {
   try {
     const targets = req.query.target 
@@ -59,7 +56,6 @@ app.get('/refresh-token', async (req, res) => {
       results.push(`Token Facebook bagi [${targetConfig}] berjaya diperbaharui!`);
     }
 
-    // 🌟 Diubah kepada format JSON ringkas untuk elak ralat "output too large"
     res.status(200).json({ 
       success: true, 
       message: "Semua token berjaya diperbaharui!",
@@ -72,7 +68,6 @@ app.get('/refresh-token', async (req, res) => {
   }
 });
 
-// Jangan lupa untuk tetapkan port untuk server mendengar
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server berjalan di port ${PORT}`);
